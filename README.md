@@ -9,3 +9,5 @@ Edges are relatively scored. The differences obtained from each case (interventi
 Notes:
 - Missing points in experimental data are replaced with NA and if they are in the middle of the series, they are estimated by taking average of neighboring data values.
 - AKT inhibitor (GSK690693) and MEK inhibitor (GSK1120212) are assumed to have the same effect on their phosphorylated forms. This is not considered for FGFR1/3 inhibitor (PD173074), its target is not found in the data.
+
+The scripts require "simp.R" from StreamMetabolism R package (http://cran.r-project.org/web/packages/StreamMetabolism/index.html) for integration so make sure you have simp.R in the same directory with the scripts.
