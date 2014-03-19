@@ -4,16 +4,28 @@
 # Gungor Budak (gungor.budak@maastrichtuniversity.nl)
 # Department of Bioinformatics, Maastricht University
 
+# netInf_experimental.R - Network Inference Using Expermental Data from the Challenge
+
+# This script works R 2.14 and above and requires simp.R from StreamMetabolism package in the same directory
+# takes cell line and stimulus as arguments; cell line is used to locate necessary data file and stimulus
+# is used to characterize the data according to intervention and no-intervention studies.
+
 args <- commandArgs(TRUE)
 cellLine <- args[1]
 stimulus <- args[2]
 midasFilePath <- paste("MD_", cellLine, "_main.csv", sep="")
+
+# relations data list holds relations between stimuli / inhibitors and their target proteins
+# Note that inhibitor - target protein relation information is obtained from literature
 
 relations <- list(
 		inhibitors=c(paste(stimulus, "GSK690693", sep="__"), paste(stimulus, "GSK690693_GSK1120212", sep="__"), paste(stimulus, "PD173074", sep="__")),
 		stimuli = c(stimulus, stimulus, stimulus),
 		targets = c("AKT", "AKT__MEK", "FGFR1__FGFR3"),
 		timePoints = c(5, 15, 30, 60, 120, 240))
+
+# orderData function rearranges the characterized data points according to a fashion so that
+# later we can see if there is any missing data point and which treatment is missing
 
 orderData <- function(experiments) {
 
@@ -74,9 +86,7 @@ orderData <- function(experiments) {
 	return(experiments)
 	}
 
-# If there are duplicates in data
-# this function will remove them
-# and return a data frame with unique data points
+# duplicateHandler looks for replicates and if there are any, it averages them into a single data point
 
 duplicateHandler <- function(experiments) {
 
@@ -122,9 +132,8 @@ duplicateHandler <- function(experiments) {
 	return(clearedExperiments)
 	}
 
-# This function knows what to have in the data
-# and checks data according to that
-# if there is missing data, it put NA for data value
+# fashinChecker knows what to have in the data and checks data according to that
+# if there is missing data. If so, it puts NA for the missing data value
 
 fashionChecker <- function(experiments) {
 
@@ -225,8 +234,10 @@ fashionChecker <- function(experiments) {
 	}
 
 
-# Function for estimation missing data points
-# only when they are single and in the middle
+# estimateDataPoints looks for NAs, and if they are not at the beginning or at the end
+# and if there are not more than one NA in a row, it estimates that data point
+# by taking the average of neighboring data points in time series data
+
 estimateDataPoints <- function(experiments) {
 
 	numberOfRows <- length(experiments[[1]])
@@ -251,8 +262,10 @@ estimateDataPoints <- function(experiments) {
 	return(experiments)
 	}
 
-# This is a function that read MIDAS file into
-# a data frame and optimize the data
+# midasReader is a function that reads MIDAS file into
+# a data frame and prepares the data for further analyses by rearranging
+# handling replicates and estimating missing data points
+
 midasReader <- function(midasFilePath, childAntibody) {
 
 	# Read data into data object
@@ -317,8 +330,8 @@ midasReader <- function(midasFilePath, childAntibody) {
 	return(estimatedExperiments)
 	} # End of midasReader function
 
-# Gets measurements from in a list and extracts
-# data for intervention and no intervention conditions
+# dataOptimizer characterizes that data according to intervention
+# and no intervention studies
 
 dataOptimizer <- function(dataList) {
 
@@ -358,8 +371,10 @@ dataOptimizer <- function(dataList) {
 	return(optimizedData)
 	}
 
-# Scores the edges Finds max difference
-# and divides all to that to have scores between 0 and 1
+# edgeScorer scores the edges by finding max difference AUC
+# and divides all to max to have scores between 0 and 1
+# this shows have diverged intervention and no-intervention from each other
+# in terms of protein expression
 
 edgeScorer <- function(optimizedData) {
 	
@@ -437,6 +452,9 @@ edgeScorer <- function(optimizedData) {
 
 	return(scores)
 	}
+	
+# networkInferrer gets the final form of data and infers the network
+# and produces SIF and EDA files of the inferred network
 
 networkInferrer <- function(optimizedData) {
 
